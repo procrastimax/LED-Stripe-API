@@ -7,16 +7,17 @@ RED_PWM = None
 GREEN_PWM = None
 BLUE_PWM = None
 
-RED_CHANNEL_PIN : int = 20
-GREEN_CHANNEL_PIN : int = 16
-BLUE_CHANNEL_PIN : int = 21
+RED_CHANNEL_PIN: int = 20
+GREEN_CHANNEL_PIN: int = 16
+BLUE_CHANNEL_PIN: int = 21
 
 # these represent the duty cycles for PWM
 red_channel_value: int = 0
 green_channel_value: int = 0
 blue_channel_value: int = 0
 
-PWM_FREQUENCY : int = 100
+PWM_FREQUENCY: int = 100
+
 
 def setup_GPIO():
     print("Setting up GPIO...")
@@ -34,12 +35,14 @@ def setup_GPIO():
     GREEN_PWM.start(green_channel_value)
     BLUE_PWM.start(blue_channel_value)
 
+
 def close_GPIO():
     print("Closing all GPIO...")
     RED_PWM.stop()
     GREEN_PWM.stop()
     BLUE_PWM.stop()
     GPIO.cleanup()
+
 
 def set_red_channel(value):
     global red_channel_value
@@ -60,6 +63,7 @@ def set_blue_channel(value):
     blue_channel_value = value
     BLUE_PWM.ChangeDutyCycle(value)
     pass
+
 
 @get("/alive")
 @get("/test")
