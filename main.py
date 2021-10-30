@@ -182,6 +182,13 @@ def main():
     set_blue_channel(0)
     close_GPIO()
 
+    print("Turning off all channels...")
+    turn_off_all_channels()
+    set_red_channel(0)
+    set_green_channel(0)
+    set_blue_channel(0)
+    close_GPIO()
+
 
 if __name__ == "__main__":
     main()
