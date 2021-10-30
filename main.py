@@ -1,29 +1,65 @@
 #!/usr/bin/python3
 
 from bottle import run, get, BaseResponse
+import RPi.GPIO as GPIO
 
+RED_PWM = None
+GREEN_PWM = None
+BLUE_PWM = None
+
+RED_CHANNEL_PIN : int = 20
+GREEN_CHANNEL_PIN : int = 16
+BLUE_CHANNEL_PIN : int = 21
+
+# these represent the duty cycles for PWM
 red_channel_value: int = 0
 green_channel_value: int = 0
 blue_channel_value: int = 0
 
+PWM_FREQUENCY : int = 100
+
+def setup_GPIO():
+    print("Setting up GPIO...")
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(GREEN_CHANNEL_PIN, GPIO.OUT)
+    GPIO.setup(RED_CHANNEL_PIN, GPIO.OUT)
+    GPIO.setup(BLUE_CHANNEL_PIN, GPIO.OUT)
+
+    global RED_PWM, GREEN_PWM, BLUE_PWM
+    RED_PWM = GPIO.PWM(RED_CHANNEL_PIN, PWM_FREQUENCY)
+    GREEN_PWM = GPIO.PWM(GREEN_CHANNEL_PIN, PWM_FREQUENCY)
+    BLUE_PWM = GPIO.PWM(BLUE_CHANNEL_PIN, PWM_FREQUENCY)
+
+    RED_PWM.start(red_channel_value)
+    GREEN_PWM.start(green_channel_value)
+    BLUE_PWM.start(blue_channel_value)
+
+def close_GPIO():
+    print("Closing all GPIO...")
+    RED_PWM.stop()
+    GREEN_PWM.stop()
+    BLUE_PWM.stop()
+    GPIO.cleanup()
 
 def set_red_channel(value):
     global red_channel_value
     red_channel_value = value
+    RED_PWM.ChangeDutyCycle(value)
     pass
 
 
 def set_green_channel(value):
     global green_channel_value
     green_channel_value = value
+    GREEN_PWM.ChangeDutyCycle(value)
     pass
 
 
 def set_blue_channel(value):
     global blue_channel_value
     blue_channel_value = value
+    BLUE_PWM.ChangeDutyCycle(value)
     pass
-
 
 @get("/alive")
 @get("/test")
@@ -132,7 +168,7 @@ def get_help():
 
 def main():
     print("Starting server...")
-    run(host="localhost", port=8000)
+    run(host="0.0.0.0", port=8000)
 
 
 if __name__ == "__main__":
