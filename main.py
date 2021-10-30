@@ -7,16 +7,16 @@ RED_PWM = None
 GREEN_PWM = None
 BLUE_PWM = None
 
-RED_CHANNEL_PIN: int = 20
+RED_CHANNEL_PIN: int = 21
 GREEN_CHANNEL_PIN: int = 16
-BLUE_CHANNEL_PIN: int = 21
+BLUE_CHANNEL_PIN: int = 20
 
 # these represent the duty cycles for PWM
 red_channel_value: int = 0
 green_channel_value: int = 0
 blue_channel_value: int = 0
 
-PWM_FREQUENCY: int = 100
+PWM_FREQUENCY: int = 60
 
 
 def setup_GPIO():
@@ -45,21 +45,21 @@ def close_GPIO():
 
 
 def set_red_channel(value):
-    global red_channel_value
+    global red_channel_value, RED_PWM
     red_channel_value = value
     RED_PWM.ChangeDutyCycle(value)
     pass
 
 
 def set_green_channel(value):
-    global green_channel_value
+    global green_channel_value, GREEN_PWM
     green_channel_value = value
     GREEN_PWM.ChangeDutyCycle(value)
     pass
 
 
 def set_blue_channel(value):
-    global blue_channel_value
+    global blue_channel_value, BLUE_PWM
     blue_channel_value = value
     BLUE_PWM.ChangeDutyCycle(value)
     pass
@@ -90,8 +90,8 @@ def handle_red_change(value):
 @get("/green/<value:int>")
 def handle_green_change(value):
     if value >= 0 and value <= 100:
-        set_red_channel(value)
-        return f"Set red channel to {str(value)}"
+        set_green_channel(value)
+        return f"Set green channel to {str(value)}"
     else:
         response = BaseResponse(
             body="Unvalid value! Set a value between 0 and 100!", status=400
@@ -172,7 +172,15 @@ def get_help():
 
 def main():
     print("Starting server...")
+    setup_GPIO()
     run(host="0.0.0.0", port=8000)
+
+    print("Turning off all channels...")
+    turn_off_all_channels()
+    set_red_channel(0)
+    set_green_channel(0)
+    set_blue_channel(0)
+    close_GPIO()
 
 
 if __name__ == "__main__":
