@@ -16,7 +16,7 @@ red_channel_value: int = 0
 green_channel_value: int = 0
 blue_channel_value: int = 0
 
-PWM_FREQUENCY: int = 60
+PWM_FREQUENCY: int = 100
 
 
 def setup_GPIO():
