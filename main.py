@@ -1,11 +1,7 @@
 #!/usr/bin/python3
 
 from bottle import run, get, BaseResponse
-import RPi.GPIO as GPIO
-
-RED_PWM = None
-GREEN_PWM = None
-BLUE_PWM = None
+import pigpio
 
 RED_CHANNEL_PIN: int = 21
 GREEN_CHANNEL_PIN: int = 16
@@ -16,54 +12,36 @@ red_channel_value: int = 0
 green_channel_value: int = 0
 blue_channel_value: int = 0
 
-PWM_FREQUENCY: int = 200
+#PWM_FREQUENCY: int = 200
 
+pi = pigpio.pi()
 
 def setup_GPIO():
     print("Setting up GPIO...")
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(GREEN_CHANNEL_PIN, GPIO.OUT)
-    GPIO.setup(RED_CHANNEL_PIN, GPIO.OUT)
-    GPIO.setup(BLUE_CHANNEL_PIN, GPIO.OUT)
-
-    global RED_PWM, GREEN_PWM, BLUE_PWM
-    RED_PWM = GPIO.PWM(RED_CHANNEL_PIN, PWM_FREQUENCY)
-    GREEN_PWM = GPIO.PWM(GREEN_CHANNEL_PIN, PWM_FREQUENCY)
-    BLUE_PWM = GPIO.PWM(BLUE_CHANNEL_PIN, PWM_FREQUENCY)
-
-    RED_PWM.start(red_channel_value)
-    GREEN_PWM.start(green_channel_value)
-    BLUE_PWM.start(blue_channel_value)
-
+    pi.set_PWM_dutycycle(RED_CHANNEL_PIN, red_channel_value)
+    pi.set_PWM_dutycycle(GREEN_CHANNEL_PIN, green_channel_value)
+    pi.set_PWM_dutycycle(BLUE_CHANNEL_PIN, blue_channel_value)
 
 def close_GPIO():
     print("Closing all GPIO...")
-    RED_PWM.stop()
-    GREEN_PWM.stop()
-    BLUE_PWM.stop()
-    GPIO.cleanup()
-
+    pi.stop()
 
 def set_red_channel(value):
     global red_channel_value, RED_PWM
     red_channel_value = value
-    RED_PWM.ChangeDutyCycle(value)
-    pass
+    pi.set_PWM_dutycycle(RED_CHANNEL_PIN, red_channel_value)
 
 
 def set_green_channel(value):
     global green_channel_value, GREEN_PWM
     green_channel_value = value
-    GREEN_PWM.ChangeDutyCycle(value)
-    pass
+    pi.set_PWM_dutycycle(GREEN_CHANNEL_PIN, green_channel_value)
 
 
 def set_blue_channel(value):
     global blue_channel_value, BLUE_PWM
     blue_channel_value = value
-    BLUE_PWM.ChangeDutyCycle(value)
-    pass
-
+    pi.set_PWM_dutycycle(BLUE_CHANNEL_PIN, blue_channel_value)
 
 @get("/alive")
 @get("/test")
@@ -76,12 +54,12 @@ def health_check():
 @get("/r/<value:int>")
 @get("/red/<value:int>")
 def handle_red_change(value):
-    if value >= 0 and value <= 100:
+    if value >= 0 and value <= 255:
         set_red_channel(value)
         return f"Set red channel to {str(value)}"
     else:
         response = BaseResponse(
-            body="Unvalid value! Set a value between 0 and 100!", status=400
+            body="Unvalid value! Set a value between 0 and 255!", status=400
         )
         return response
 
@@ -89,12 +67,12 @@ def handle_red_change(value):
 @get("/g/<value:int>")
 @get("/green/<value:int>")
 def handle_green_change(value):
-    if value >= 0 and value <= 100:
+    if value >= 0 and value <= 255:
         set_green_channel(value)
         return f"Set green channel to {str(value)}"
     else:
         response = BaseResponse(
-            body="Unvalid value! Set a value between 0 and 100!", status=400
+            body="Unvalid value! Set a value between 0 and 255!", status=400
         )
         return response
 
@@ -102,12 +80,12 @@ def handle_green_change(value):
 @get("/b/<value:int>")
 @get("/blue/<value:int>")
 def handle_blue_change(value):
-    if value >= 0 and value <= 100:
+    if value >= 0 and value <= 255:
         set_blue_channel(value)
         return f"Set blue channel to {str(value)}"
     else:
         response = BaseResponse(
-            body="Unvalid value! Set a value between 0 and 100!", status=400
+            body="Unvalid value! Set a value between 0 and 255!", status=400
         )
         return response
 
@@ -116,11 +94,11 @@ def handle_blue_change(value):
 def handle_all_change(red, green, blue):
     if (
         red >= 0
-        and red <= 100
+        and red <= 255
         and green >= 0
-        and green <= 100
+        and green <= 255
         and blue >= 0
-        and blue <= 100
+        and blue <= 255
     ):
         set_red_channel(red)
         set_green_channel(green)
@@ -128,16 +106,16 @@ def handle_all_change(red, green, blue):
         return f"Set channels to: red ({red}), green ({green}), blue ({blue})"
     else:
         response = BaseResponse(
-            body="Unvalid value! Set a value between 0 and 100!", status=400
+            body="Unvalid value! Set a value between 0 and 255!", status=400
         )
         return response
 
 
 @get("/white")
 def turn_on_all_channels():
-    set_red_channel(100)
-    set_green_channel(100)
-    set_blue_channel(100)
+    set_red_channel(255)
+    set_green_channel(255)
+    set_blue_channel(255)
     return "Set all channels on (100%)"
 
 
@@ -188,7 +166,6 @@ def main():
     set_green_channel(0)
     set_blue_channel(0)
     close_GPIO()
-
 
 if __name__ == "__main__":
     main()
