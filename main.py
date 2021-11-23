@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from bottle import run, get, BaseResponse
+from bottle import run, get, BaseResponse, request
 import pigpio
 
 RED_CHANNEL_PIN: int = 21
@@ -12,9 +12,8 @@ red_channel_value: int = 0
 green_channel_value: int = 0
 blue_channel_value: int = 0
 
-#PWM_FREQUENCY: int = 200
-
 pi = pigpio.pi()
+
 
 def setup_GPIO():
     print("Setting up GPIO...")
@@ -22,114 +21,145 @@ def setup_GPIO():
     pi.set_PWM_dutycycle(GREEN_CHANNEL_PIN, green_channel_value)
     pi.set_PWM_dutycycle(BLUE_CHANNEL_PIN, blue_channel_value)
 
+
 def close_GPIO():
     print("Closing all GPIO...")
     pi.stop()
 
-def set_red_channel(value):
+
+def set_red(value):
     global red_channel_value, RED_PWM
     red_channel_value = value
     pi.set_PWM_dutycycle(RED_CHANNEL_PIN, red_channel_value)
 
 
-def set_green_channel(value):
+def set_green(value):
     global green_channel_value, GREEN_PWM
     green_channel_value = value
     pi.set_PWM_dutycycle(GREEN_CHANNEL_PIN, green_channel_value)
 
 
-def set_blue_channel(value):
+def set_blue(value):
     global blue_channel_value, BLUE_PWM
     blue_channel_value = value
     pi.set_PWM_dutycycle(BLUE_CHANNEL_PIN, blue_channel_value)
+
 
 @get("/alive")
 @get("/test")
 @get("/ping")
 @get("/health")
 def health_check():
-    return "API is alive!"
+    return "I am alive!"
 
 
 @get("/r/<value:int>")
 @get("/red/<value:int>")
-def handle_red_change(value):
-    if value >= 0 and value <= 255:
-        set_red_channel(value)
-        return f"Set red channel to {str(value)}"
+def set_red_channel(value):
+    if (_check_value(value)):
+        set_red(value)
+        return f"{red_channel_value}"
     else:
-        response = BaseResponse(
-            body="Unvalid value! Set a value between 0 and 255!", status=400
-        )
-        return response
+        return BaseResponse(
+            body="Unvalid value! Set a value between 0 and 255!", status=400)
+
+
+@get("/r")
+@get("/red")
+def get_red_channel():
+    return f"{red_channel_value}"
 
 
 @get("/g/<value:int>")
 @get("/green/<value:int>")
-def handle_green_change(value):
-    if value >= 0 and value <= 255:
-        set_green_channel(value)
-        return f"Set green channel to {str(value)}"
+def set_green_channel(value):
+    if (_check_value(value)):
+        set_green(value)
+        return f"{green_channel_value}"
     else:
-        response = BaseResponse(
-            body="Unvalid value! Set a value between 0 and 255!", status=400
-        )
-        return response
+        return BaseResponse(
+            body="Unvalid value! Set a value between 0 and 255!", status=400)
+
+
+@get("/g")
+@get("/green")
+def get_green_channel():
+    return f"{green_channel_value}"
 
 
 @get("/b/<value:int>")
 @get("/blue/<value:int>")
-def handle_blue_change(value):
-    if value >= 0 and value <= 255:
-        set_blue_channel(value)
-        return f"Set blue channel to {str(value)}"
+def set_blue_channel(value):
+    if (_check_value(value)):
+        set_blue(value)
+        return f"{blue_channel_value}"
     else:
-        response = BaseResponse(
-            body="Unvalid value! Set a value between 0 and 255!", status=400
+        return BaseResponse(
+            body="Unvalid value! Set a value between 0 and 255!", status=400)
+
+
+@get("/b")
+@get("/blue")
+def get_blue_channel():
+    return f"{blue_channel_value}"
+
+
+@get("/setValues")
+def set_all_values():
+    """
+        This query is able to set all channels with HTTP Query variables
+        This is the preferred method to set the channels.
+        An example query could look like: .../setChannels?r=VALUE&g=VALUE&b=VALUE
+    """
+
+    redVal = request.query.r
+    greenVal = request.query.g
+    blueVal = request.query.b
+
+    if not redVal:
+        redVal = -1
+
+    if not greenVal:
+        greenVal = -1
+
+    if not blueVal:
+        blueVal = -1
+
+    # we dont know if the passed parameters are valid int, so we try to convert them
+    # if one of the parameters is not a valid int, the complete query is
+    # invalid, this is why we only use one try/except construct
+    try:
+        redVal = int(redVal)
+        greenVal = int(greenVal)
+        blueVal = int(blueVal)
+    except ValueError:
+        return BaseResponse(
+            body=f"Unvalid value(s)! Query {request.query_string} does not contain valid integer query parameter!", status=400
         )
-        return response
+
+    if _check_value(redVal) and isinstance(redVal, int):
+        set_red(redVal)
+
+    if _check_value(greenVal) and isinstance(greenVal, int):
+        set_green(greenVal)
+
+    if _check_value(blueVal) and isinstance(blueVal, int):
+        set_blue(blueVal)
+
+    return f"{red_channel_value},{green_channel_value},{blue_channel_value}"
 
 
-@get("/all/<red:int>,<green:int>,<blue:int>")
-def handle_all_change(red, green, blue):
-    if (
-        red >= 0
-        and red <= 255
-        and green >= 0
-        and green <= 255
-        and blue >= 0
-        and blue <= 255
-    ):
-        set_red_channel(red)
-        set_green_channel(green)
-        set_blue_channel(blue)
-        return f"Set channels to: red ({red}), green ({green}), blue ({blue})"
-    else:
-        response = BaseResponse(
-            body="Unvalid value! Set a value between 0 and 255!", status=400
-        )
-        return response
-
-
-@get("/white")
-def turn_on_all_channels():
-    set_red_channel(255)
-    set_green_channel(255)
-    set_blue_channel(255)
-    return "Set all channels on (100%)"
+@get("/getValues")
+def get_current_values():
+    return f"{red_channel_value},{green_channel_value},{blue_channel_value}"
 
 
 @get("/off")
-def turn_off_all_channels():
-    set_red_channel(0)
-    set_green_channel(0)
-    set_blue_channel(0)
-    return "Set all channels off"
-
-
-@get("/values")
-def get_current_values():
-    return f"Current brightness values: r ({red_channel_value}), g ({green_channel_value}), b({blue_channel_value})"
+def turn_off_all():
+    set_red(0)
+    set_green(0)
+    set_blue(0)
+    return f"{red_channel_value},{green_channel_value},{blue_channel_value}"
 
 
 @get("/help")
@@ -138,34 +168,32 @@ def get_help():
     help_text: str = """
     <h1>Help - Supported functions</h1>
     <b>/help</b> - shows this help page</br>
-    <b>/(r/red)/VALUE</b> - sets red channel to VALUE (0-100)</br>
-    <b>/(g/green)/VALUE</b> - sets green channel to VALUE (0-100)</br>
-    <b>/(b/blue)/VALUE</b> - sets blue channel to VALUE (0-100)</br>
-    <b>/white</b> - turns all channels on (100)</br>
+    <b>/(r/red)/VALUE</b> - sets red channel to VALUE (0-255)</br>
+    <b>/(g/green)/VALUE</b> - sets green channel to VALUE (0-255)</br>
+    <b>/(b/blue)/VALUE</b> - sets blue channel to VALUE (0-255)</br>
+    <b>/(r/red)</b> - gets red channel</br>
+    <b>/(g/green)</b> - gets green channel</br>
+    <b>/(b/blue)</b> - gets blue channel</br>
+    <b>/setValues?r=VALUE&g=VALUE&b=VALUE</b> - sets the r,g and b values via HTTP Query variables</br>
+    <b>/getValues</b> - gets the r,g and b values as csv</br>
     <b>/off</b> - turns all channel off (0)</br>
-    <b>/values</b> - returns the current values of all channels</br>
     """
     return help_text
+
+
+def _check_value(val: int) -> bool:
+    return val in range(0, 256)
 
 
 def main():
     print("Starting server...")
     setup_GPIO()
-    run(host="0.0.0.0", port=8000)
-    
-    print("Turning off all channels...")
-    turn_off_all_channels()
-    set_red_channel(0)
-    set_green_channel(0)
-    set_blue_channel(0)
-    close_GPIO()
+    run(host="0.0.0.0", port=8000, quiet=True)
 
     print("Turning off all channels...")
-    turn_off_all_channels()
-    set_red_channel(0)
-    set_green_channel(0)
-    set_blue_channel(0)
+    turn_off_all()
     close_GPIO()
+
 
 if __name__ == "__main__":
     main()
