@@ -7,7 +7,7 @@ A simple REST-API to control a RGB-LED stripe with a Raspberry Pi.
 
 | Type        | REQUEST        | RESPONSE      | Codes             | Description
 | ------------|:--------------:| -------------:|-------------------|------------
-| GET         | /health        | "I am alive   | 200 OK            | Checks if the API is available
+| GET         | /health        | "I am alive"  | 200 OK            | Checks if the API is available
 | GET         | /brightness    | INT (0-100)   | 200 OK, 400 ERR   | Returns the value of the brightness value
 | GET         | /r             | INT (0-255)   | 200 OK, 400 ERR   | Returns the value of the red channel
 | GET         | /g             | INT (0-255)   | 200 OK, 400 ERR   | Returns the value of the green channel
