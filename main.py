@@ -29,33 +29,31 @@ def close_GPIO():
 
 
 def set_red(value):
-    pi.set_PWM_dutycycle(RED_CHANNEL_PIN, value)
+    red_value = round(float(red_channel_value) *
+                      (float(brightness_value) / 100.0))
+    pi.set_PWM_dutycycle(RED_CHANNEL_PIN, red_value)
 
 
 def set_green(value):
-    pi.set_PWM_dutycycle(GREEN_CHANNEL_PIN, value)
+    green_value = round(float(green_channel_value) *
+                        (float(brightness_value) / 100.0))
+    pi.set_PWM_dutycycle(GREEN_CHANNEL_PIN, green_value)
 
 
 def set_blue(value):
-    pi.set_PWM_dutycycle(BLUE_CHANNEL_PIN, value)
+    blue_value = round(float(blue_channel_value) *
+                       (float(brightness_value) / 100.0))
+    pi.set_PWM_dutycycle(BLUE_CHANNEL_PIN, blue_value)
 
 
 def set_brightness(value) -> str:
     global brightness_value
     brightness_value = value
 
-    red_value = round(float(red_channel_value) *
-                      (float(brightness_value) / 100.0))
-    green_value = round(float(green_channel_value) *
-                        (float(brightness_value) / 100.0))
-    blue_value = round(float(blue_channel_value) *
-                       (float(brightness_value) / 100.0))
-
-    # update all channels
-    set_red(red_value)
-    set_green(green_value)
-    set_blue(blue_value)
-    return f"{red_value},{green_value},{blue_value},{brightness_value}"
+    set_red(red_channel_value)
+    set_green(green_channel_value)
+    set_blue(blue_channel_value)
+    return f"{red_channel_value},{green_channel_value},{blue_channel_value},{brightness_value}"
 
 
 @get("/alive")
@@ -85,9 +83,8 @@ def get_brightness_value():
 def set_red_channel(value):
     if (_check_value(value)):
         global red_channel_value
-        red_channel_value = round(
-            float(value) * (float(brightness_value) / 100.0))
-        set_red(red_channel_value)
+        red_channel_value = value
+        set_red(value)
         return f"{red_channel_value}"
     else:
         return BaseResponse(
@@ -105,9 +102,8 @@ def get_red_channel():
 def set_green_channel(value):
     if (_check_value(value)):
         global green_channel_value
-        green_channel_value = round(
-            float(value) * (float(brightness_value) / 100.0))
-        set_green(green_channel_value)
+        green_channel_value = value
+        set_green(value)
         return f"{green_channel_value}"
     else:
         return BaseResponse(
@@ -125,9 +121,8 @@ def get_green_channel():
 def set_blue_channel(value):
     if (_check_value(value)):
         global blue_channel_value
-        blue_channel_value = round(
-            float(value) * (float(brightness_value) / 100.0))
-        set_blue(blue_channel_value)
+        blue_channel_value = value
+        set_blue(value)
         return f"{blue_channel_value}"
     else:
         return BaseResponse(
@@ -179,19 +174,13 @@ def set_all_values():
             status=400)
 
     if _check_value(redVal) and isinstance(redVal, int):
-        global red_channel_value
-        red_channel_value = round(
-            float(redVal) * (float(brightness_value) / 100.0))
+        set_red_channel(redVal)
 
     if _check_value(greenVal) and isinstance(greenVal, int):
-        global green_channel_value
-        green_channel_value = round(
-            float(greenVal) * (float(brightness_value) / 100.0))
+        set_green_channel(greenVal)
 
     if _check_value(blueVal) and isinstance(blueVal, int):
-        global blue_channel_value
-        blue_channel_value = round(
-            float(blueVal) * (float(brightness_value) / 100.0))
+        set_blue_channel(blueVal)
 
     # brightness should be set as last, since it modified the previous values
     if _check_relative_value(brightness) and isinstance(brightness, int):
@@ -202,13 +191,7 @@ def set_all_values():
 
 @get("/getValues")
 def get_current_values():
-    red_value = round(float(red_channel_value) *
-                      (float(brightness_value) / 100.0))
-    green_value = round(float(green_channel_value) *
-                        (float(brightness_value) / 100.0))
-    blue_value = round(float(blue_channel_value) *
-                       (float(brightness_value) / 100.0))
-    return f"{red_value},{green_value},{blue_value},{brightness_value}"
+    return f"{red_channel_value},{green_channel_value},{blue_channel_value},{brightness_value}"
 
 
 @get("/off")
